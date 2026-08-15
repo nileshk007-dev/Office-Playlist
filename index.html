@@ -1,173 +1,77 @@
-let player;
-let isPlaying = false;
-let updateTimer;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Playlist</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background-overlay"></div>
 
-const PLAYLIST_ID = 'PLHK9W6IpLdBo';
+    <header class="top-bar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fa-solid fa-mug-hot"></i></div>
+            <div class="logo-text">
+                <h2>Office Playlist</h2>
+                <p>DEEP WORK & FOCUS</p>
+            </div>
+        </div>
+    </header>
 
-const tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-const firstScriptTag = document.getElementsByTagName('script')[0];
-firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    <main class="center-content">
+        <h1 class="main-title">Focus.</h1>
+        <p class="subtitle">Your curated workspace soundtrack</p>
+    </main>
 
-function onYouTubeIframeAPIReady() {
-    player = new YT.Player('player', {
-        playerVars: { 
-            'playsinline': 1, 
-            'controls': 0,
-            'listType': 'playlist',
-            'list': PLAYLIST_ID, 
-            'loop': 1
-        },
-        events: {
-            'onReady': onPlayerReady,
-            'onStateChange': onPlayerStateChange
-        }
-    });
-}
+    <!-- NEW: Visual Queue Overlay -->
+    <div id="queue-modal" class="queue-modal hidden">
+        <div class="queue-header">
+            <h3>Playlist Queue</h3>
+            <button onclick="toggleQueue()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <ul id="queue-list"></ul>
+    </div>
 
-function onPlayerReady(event) {
-    // THIS IS THE FIX: Tell YouTube to shuffle the playlist automatically
-    player.setShuffle(true); 
-    
-    let savedIndex = localStorage.getItem('officePlaylistIndex');
-    if (savedIndex !== null) {
-        setTimeout(() => {
-            player.playVideoAt(parseInt(savedIndex));
-            player.pauseVideo(); 
-        }, 1000);
-    }
-}
+    <!-- Hidden YouTube Player -->
+    <div id="player" class="hidden-player"></div>
 
-function onPlayerStateChange(event) {
-    if (event.data === YT.PlayerState.PLAYING) {
-        ensurePlayingState();
-        let videoData = player.getVideoData();
-        if (videoData && videoData.title) {
-            document.getElementById('track-name').innerText = videoData.title;
-            document.getElementById('track-artist').innerText = "Office Playlist Queue";
-        }
-        
-        let currentIndex = player.getPlaylistIndex();
-        if (currentIndex !== null && currentIndex !== -1) {
-            localStorage.setItem('officePlaylistIndex', currentIndex);
-        }
-        
-        let duration = player.getDuration();
-        document.getElementById('seek-bar').max = duration;
-        document.getElementById('total-time').innerText = formatTime(duration);
-        
-        clearInterval(updateTimer);
-        updateTimer = setInterval(updateProgressBar, 1000);
-        
-        renderQueue();
-    } else {
-        clearInterval(updateTimer);
-    }
-}
+    <footer class="player-container">
+        <div class="player-bar">
+            <div class="now-playing">
+                <div class="song-details">
+                    <h4 id="track-name">Ready to play</h4>
+                    <p id="track-artist">YouTube Playlist</p>
+                </div>
+            </div>
+            
+            <div class="player-controls">
+                <div class="buttons">
+                    <button onclick="prevVideo()"><i class="fa-solid fa-backward-step"></i></button>
+                    <button class="play-btn" onclick="togglePlay()"><i id="play-icon" class="fa-solid fa-play"></i></button>
+                    <button onclick="nextVideo()"><i class="fa-solid fa-forward-step"></i></button>
+                    <!-- Updated Queue Button -->
+                    <button onclick="toggleQueue()" class="list-btn"><i class="fa-solid fa-list"></i></button>
+                </div>
+                
+                <div class="progress-bar-container">
+                    <span id="current-time">0:00</span>
+                    <input type="range" id="seek-bar" value="0" min="0" max="100" step="1">
+                    <span id="total-time">0:00</span>
+                </div>
+            </div>
+        </div>
 
-function togglePlay() {
-    const playIcon = document.getElementById('play-icon');
-    if (isPlaying) {
-        player.pauseVideo();
-        playIcon.classList.replace('fa-pause', 'fa-play');
-    } else {
-        player.playVideo(); 
-        playIcon.classList.replace('fa-play', 'fa-pause');
-    }
-    isPlaying = !isPlaying;
-}
+        <div class="shortcuts">
+            <span><kbd>Space</kbd> PLAY / PAUSE</span>
+            <span><kbd>←</kbd> <kbd>→</kbd> SEEK</span>
+            <span><kbd>N</kbd> NEXT</span>
+            <span><kbd>P</kbd> PREV</span>
+            <span><kbd>Q</kbd> QUEUE</span>
+        </div>
+    </footer>
 
-function nextVideo() { player.nextVideo(); }
-function prevVideo() { player.previousVideo(); }
-
-function ensurePlayingState() {
-    if (!isPlaying) {
-        isPlaying = true;
-        document.getElementById('play-icon').classList.replace('fa-play', 'fa-pause');
-    }
-}
-
-function updateProgressBar() {
-    if (player && isPlaying) {
-        let currentTime = player.getCurrentTime();
-        document.getElementById('seek-bar').value = currentTime;
-        document.getElementById('current-time').innerText = formatTime(currentTime);
-    }
-}
-
-function formatTime(timeInSeconds) {
-    let minutes = Math.floor(timeInSeconds / 60);
-    let seconds = Math.floor(timeInSeconds % 60);
-    return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-}
-
-document.getElementById('seek-bar').addEventListener('input', function() {
-    let seekTo = this.value;
-    player.seekTo(seekTo, true);
-    document.getElementById('current-time').innerText = formatTime(seekTo);
-});
-
-// ==========================================
-// Visual Queue Logic
-// ==========================================
-function toggleQueue() {
-    const modal = document.getElementById('queue-modal');
-    modal.classList.toggle('hidden');
-    if (!modal.classList.contains('hidden')) {
-        renderQueue();
-    }
-}
-
-function renderQueue() {
-    const queueList = document.getElementById('queue-list');
-    queueList.innerHTML = '';
-    
-    if (!player || !player.getPlaylist) return;
-    
-    const playlist = player.getPlaylist();
-    if (!playlist) return;
-    
-    const currentIndex = player.getPlaylistIndex();
-    
-    playlist.forEach((id, index) => {
-        let li = document.createElement('li');
-        li.innerText = "Track " + (index + 1);
-        
-        if (index === currentIndex) {
-            li.classList.add('active-track');
-            li.innerText = "▶ Track " + (index + 1) + " (Playing)";
-        }
-        
-        li.onclick = () => { 
-            player.playVideoAt(index);
-            ensurePlayingState();
-        };
-        queueList.appendChild(li);
-    });
-}
-
-document.addEventListener('keydown', function(event) {
-    if(event.target.tagName.toLowerCase() === 'input') return;
-
-    switch(event.code) {
-        case 'Space':
-            event.preventDefault();
-            togglePlay();
-            break;
-        case 'KeyN':
-            nextVideo();
-            break;
-        case 'KeyP':
-            prevVideo();
-            break;
-        case 'KeyQ':
-            toggleQueue();
-            break;
-        case 'ArrowRight':
-            if(player) player.seekTo(player.getCurrentTime() + 10, true);
-            break;
-        case 'ArrowLeft':
-            if(player) player.seekTo(player.getCurrentTime() - 10, true);
-            break;
-    }
-});
+    <script src="script.js"></script>
+</body>
+</html>
