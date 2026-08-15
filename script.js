@@ -26,10 +26,7 @@ function onYouTubeIframeAPIReady() {
 }
 
 function onPlayerReady(event) {
-    // Tell YouTube to shuffle the playlist on startup
     player.setShuffle(true); 
-    
-    // Safely load the first song of the newly shuffled list
     setTimeout(() => {
         player.playVideoAt(0);
         player.pauseVideo(); 
@@ -52,7 +49,10 @@ function onPlayerStateChange(event) {
         clearInterval(updateTimer);
         updateTimer = setInterval(updateProgressBar, 1000);
         
-        renderQueue();
+        // Only update the queue UI if the modal is currently open to save resources
+        if (!document.getElementById('queue-modal').classList.contains('hidden')) {
+            renderQueue();
+        }
     } else {
         clearInterval(updateTimer);
     }
@@ -101,8 +101,42 @@ document.getElementById('seek-bar').addEventListener('input', function() {
 });
 
 // ==========================================
-// Visual Queue & Real Song Title Fetching
+// PERFORMANCE FIX: Background Fetch Queue
 // ==========================================
+let fetchQueue = [];
+let isFetching = false;
+
+function processFetchQueue() {
+    // If nothing to fetch or already fetching, stop
+    if (fetchQueue.length === 0 || isFetching) return;
+    
+    isFetching = true;
+    let id = fetchQueue.shift(); // Take the first ID in line
+    
+    fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.title) {
+                let savedTitles = JSON.parse(localStorage.getItem('officePlaylistTitles') || '{}');
+                savedTitles[id] = data.title; 
+                localStorage.setItem('officePlaylistTitles', JSON.stringify(savedTitles)); 
+                
+                // Gently update the text on the screen if the queue is open
+                let li = document.getElementById('track-' + id);
+                if (li) {
+                    let isCurrent = li.classList.contains('active-track');
+                    li.innerText = (isCurrent ? "▶ " : "") + data.title; 
+                }
+            }
+        })
+        .catch(error => console.log("Skipped fetching track"))
+        .finally(() => {
+            isFetching = false;
+            // Wait 300 milliseconds before fetching the next song to prevent browser freezing
+            setTimeout(processFetchQueue, 300); 
+        });
+}
+
 function toggleQueue() {
     const modal = document.getElementById('queue-modal');
     modal.classList.toggle('hidden');
@@ -121,45 +155,36 @@ function renderQueue() {
     if (!playlist) return;
     
     const currentIndex = player.getPlaylistIndex();
-    
-    // Check if we already saved the titles in the browser memory
     let savedTitles = JSON.parse(localStorage.getItem('officePlaylistTitles') || '{}');
     
     playlist.forEach((id, index) => {
         let li = document.createElement('li');
+        li.id = 'track-' + id; // Assign an ID so the background fetcher can find it
         let isCurrent = (index === currentIndex);
         
         if (isCurrent) li.classList.add('active-track');
         
-        // If we have the title saved, use it. If not, temporarily show "Loading..."
         let displayText = savedTitles[id] ? savedTitles[id] : "Loading Track " + (index + 1) + "...";
         li.innerText = (isCurrent ? "▶ " : "") + displayText;
         
         li.onclick = () => { 
             player.playVideoAt(index);
             ensurePlayingState();
-            toggleQueue(); // Automatically close the queue when a song is clicked
+            toggleQueue(); 
         };
         
         queueList.appendChild(li);
 
-        // If the title wasn't saved, fetch it in the background
-        if (!savedTitles[id]) {
-            fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.title) {
-                        savedTitles[id] = data.title; // Save the real title
-                        localStorage.setItem('officePlaylistTitles', JSON.stringify(savedTitles)); 
-                        li.innerText = (isCurrent ? "▶ " : "") + data.title; // Update instantly
-                    }
-                })
-                .catch(error => console.log("Could not fetch title"));
+        // If the title isn't saved, add it to the background line instead of fetching immediately
+        if (!savedTitles[id] && !fetchQueue.includes(id)) {
+            fetchQueue.push(id);
         }
     });
+
+    // Start the slow, safe fetching process
+    processFetchQueue();
 }
 
-// Keyboard Shortcuts Logic
 document.addEventListener('keydown', function(event) {
     if(event.target.tagName.toLowerCase() === 'input') return;
 
