@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Playlist</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for the coffee and play icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background-overlay"></div>
+
+    <header class="top-bar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fa-solid fa-mug-hot"></i></div>
+            <div class="logo-text">
+                <h2>Office Playlist</h2>
+                <p>DEEP WORK & FOCUS</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="center-content">
+        <h1 class="main-title">Focus.</h1>
+        <p class="subtitle">Your curated workspace soundtrack</p>
+    </main>
+
+    <!-- Hidden YouTube Player -->
+    <div id="player" class="hidden-player"></div>
+
+    <footer class="player-container">
+        <div class="player-bar">
+            <div class="now-playing">
+                <div class="song-details">
+                    <h4 id="track-name">Ready to work</h4>
+                    <p>YouTube Audio</p>
+                </div>
+            </div>
+            
+            <div class="player-controls">
+                <div class="buttons">
+                    <button onclick="prevVideo()"><i class="fa-solid fa-backward-step"></i></button>
+                    <button class="play-btn" onclick="togglePlay()"><i id="play-icon" class="fa-solid fa-play"></i></button>
+                    <button onclick="nextVideo()"><i class="fa-solid fa-forward-step"></i></button>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
