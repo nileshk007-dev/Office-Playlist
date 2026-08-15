@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Office Playlist</title>
+    <title>Office Playlist | Deep Work & Focus</title>
+    <!-- SEO Tags -->
+    <meta name="description" content="A curated, cinematic workspace soundtrack for deep work and focus. Free custom YouTube player with lofi and ambient music.">
+    <meta name="keywords" content="office playlist, deep work music, focus soundtrack, cinematic workspace, productivity music">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -25,7 +28,7 @@
         <p class="subtitle">Your curated workspace soundtrack</p>
     </main>
 
-    <!-- NEW: Visual Queue Overlay -->
+    <!-- Visual Queue Overlay (Bottom Pop-up) -->
     <div id="queue-modal" class="queue-modal hidden">
         <div class="queue-header">
             <h3>Playlist Queue</h3>
@@ -51,7 +54,6 @@
                     <button onclick="prevVideo()"><i class="fa-solid fa-backward-step"></i></button>
                     <button class="play-btn" onclick="togglePlay()"><i id="play-icon" class="fa-solid fa-play"></i></button>
                     <button onclick="nextVideo()"><i class="fa-solid fa-forward-step"></i></button>
-                    <!-- Updated Queue Button -->
                     <button onclick="toggleQueue()" class="list-btn"><i class="fa-solid fa-list"></i></button>
                 </div>
                 
@@ -71,6 +73,11 @@
             <span><kbd>Q</kbd> QUEUE</span>
         </div>
     </footer>
+
+    <!-- Creator Signature -->
+    <div class="creator-signature">
+        <a href="https://github.com/nileshk007-dev" target="_blank">Crafted by Nilesh Karma</a>
+    </div>
 
     <script src="script.js"></script>
 </body>
