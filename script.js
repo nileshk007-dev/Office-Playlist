@@ -2,10 +2,8 @@ let player;
 let isPlaying = false;
 let updateTimer;
 
-// YOUR CUSTOM YOUTUBE PLAYLIST
 const PLAYLIST_ID = 'PLHK9W6IpLdBo';
 
-// Load YouTube API
 const tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
 const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -21,9 +19,23 @@ function onYouTubeIframeAPIReady() {
             'loop': 1
         },
         events: {
+            'onReady': onPlayerReady,
             'onStateChange': onPlayerStateChange
         }
     });
+}
+
+function onPlayerReady(event) {
+    // THIS IS THE FIX: Tell YouTube to shuffle the playlist automatically
+    player.setShuffle(true); 
+    
+    let savedIndex = localStorage.getItem('officePlaylistIndex');
+    if (savedIndex !== null) {
+        setTimeout(() => {
+            player.playVideoAt(parseInt(savedIndex));
+            player.pauseVideo(); 
+        }, 1000);
+    }
 }
 
 function onPlayerStateChange(event) {
@@ -35,13 +47,19 @@ function onPlayerStateChange(event) {
             document.getElementById('track-artist').innerText = "Office Playlist Queue";
         }
         
-        // Setup the progress bar maximum length and start the timer
+        let currentIndex = player.getPlaylistIndex();
+        if (currentIndex !== null && currentIndex !== -1) {
+            localStorage.setItem('officePlaylistIndex', currentIndex);
+        }
+        
         let duration = player.getDuration();
         document.getElementById('seek-bar').max = duration;
         document.getElementById('total-time').innerText = formatTime(duration);
         
         clearInterval(updateTimer);
         updateTimer = setInterval(updateProgressBar, 1000);
+        
+        renderQueue();
     } else {
         clearInterval(updateTimer);
     }
@@ -69,7 +87,6 @@ function ensurePlayingState() {
     }
 }
 
-// Progress Bar & Time Logic
 function updateProgressBar() {
     if (player && isPlaying) {
         let currentTime = player.getCurrentTime();
@@ -84,21 +101,57 @@ function formatTime(timeInSeconds) {
     return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
 }
 
-// Skip when the user drags the slider
 document.getElementById('seek-bar').addEventListener('input', function() {
     let seekTo = this.value;
     player.seekTo(seekTo, true);
     document.getElementById('current-time').innerText = formatTime(seekTo);
 });
 
-// Keyboard Shortcuts Logic
+// ==========================================
+// Visual Queue Logic
+// ==========================================
+function toggleQueue() {
+    const modal = document.getElementById('queue-modal');
+    modal.classList.toggle('hidden');
+    if (!modal.classList.contains('hidden')) {
+        renderQueue();
+    }
+}
+
+function renderQueue() {
+    const queueList = document.getElementById('queue-list');
+    queueList.innerHTML = '';
+    
+    if (!player || !player.getPlaylist) return;
+    
+    const playlist = player.getPlaylist();
+    if (!playlist) return;
+    
+    const currentIndex = player.getPlaylistIndex();
+    
+    playlist.forEach((id, index) => {
+        let li = document.createElement('li');
+        li.innerText = "Track " + (index + 1);
+        
+        if (index === currentIndex) {
+            li.classList.add('active-track');
+            li.innerText = "▶ Track " + (index + 1) + " (Playing)";
+        }
+        
+        li.onclick = () => { 
+            player.playVideoAt(index);
+            ensurePlayingState();
+        };
+        queueList.appendChild(li);
+    });
+}
+
 document.addEventListener('keydown', function(event) {
-    // Make sure we aren't typing inside an input field
     if(event.target.tagName.toLowerCase() === 'input') return;
 
     switch(event.code) {
         case 'Space':
-            event.preventDefault(); // Prevents the page from scrolling down
+            event.preventDefault();
             togglePlay();
             break;
         case 'KeyN':
@@ -106,6 +159,9 @@ document.addEventListener('keydown', function(event) {
             break;
         case 'KeyP':
             prevVideo();
+            break;
+        case 'KeyQ':
+            toggleQueue();
             break;
         case 'ArrowRight':
             if(player) player.seekTo(player.getCurrentTime() + 10, true);
