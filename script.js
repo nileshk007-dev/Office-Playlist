@@ -26,16 +26,14 @@ function onYouTubeIframeAPIReady() {
 }
 
 function onPlayerReady(event) {
-    // THIS IS THE FIX: Tell YouTube to shuffle the playlist automatically
+    // Tell YouTube to shuffle the playlist on startup
     player.setShuffle(true); 
     
-    let savedIndex = localStorage.getItem('officePlaylistIndex');
-    if (savedIndex !== null) {
-        setTimeout(() => {
-            player.playVideoAt(parseInt(savedIndex));
-            player.pauseVideo(); 
-        }, 1000);
-    }
+    // Safely load the first song of the newly shuffled list
+    setTimeout(() => {
+        player.playVideoAt(0);
+        player.pauseVideo(); 
+    }, 1500);
 }
 
 function onPlayerStateChange(event) {
@@ -45,11 +43,6 @@ function onPlayerStateChange(event) {
         if (videoData && videoData.title) {
             document.getElementById('track-name').innerText = videoData.title;
             document.getElementById('track-artist').innerText = "Office Playlist Queue";
-        }
-        
-        let currentIndex = player.getPlaylistIndex();
-        if (currentIndex !== null && currentIndex !== -1) {
-            localStorage.setItem('officePlaylistIndex', currentIndex);
         }
         
         let duration = player.getDuration();
@@ -108,7 +101,7 @@ document.getElementById('seek-bar').addEventListener('input', function() {
 });
 
 // ==========================================
-// Visual Queue Logic
+// Visual Queue & Real Song Title Fetching
 // ==========================================
 function toggleQueue() {
     const modal = document.getElementById('queue-modal');
@@ -129,23 +122,44 @@ function renderQueue() {
     
     const currentIndex = player.getPlaylistIndex();
     
+    // Check if we already saved the titles in the browser memory
+    let savedTitles = JSON.parse(localStorage.getItem('officePlaylistTitles') || '{}');
+    
     playlist.forEach((id, index) => {
         let li = document.createElement('li');
-        li.innerText = "Track " + (index + 1);
+        let isCurrent = (index === currentIndex);
         
-        if (index === currentIndex) {
-            li.classList.add('active-track');
-            li.innerText = "▶ Track " + (index + 1) + " (Playing)";
-        }
+        if (isCurrent) li.classList.add('active-track');
+        
+        // If we have the title saved, use it. If not, temporarily show "Loading..."
+        let displayText = savedTitles[id] ? savedTitles[id] : "Loading Track " + (index + 1) + "...";
+        li.innerText = (isCurrent ? "▶ " : "") + displayText;
         
         li.onclick = () => { 
             player.playVideoAt(index);
             ensurePlayingState();
+            toggleQueue(); // Automatically close the queue when a song is clicked
         };
+        
         queueList.appendChild(li);
+
+        // If the title wasn't saved, fetch it in the background
+        if (!savedTitles[id]) {
+            fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.title) {
+                        savedTitles[id] = data.title; // Save the real title
+                        localStorage.setItem('officePlaylistTitles', JSON.stringify(savedTitles)); 
+                        li.innerText = (isCurrent ? "▶ " : "") + data.title; // Update instantly
+                    }
+                })
+                .catch(error => console.log("Could not fetch title"));
+        }
     });
 }
 
+// Keyboard Shortcuts Logic
 document.addEventListener('keydown', function(event) {
     if(event.target.tagName.toLowerCase() === 'input') return;
 
