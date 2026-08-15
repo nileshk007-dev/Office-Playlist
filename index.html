@@ -42,8 +42,25 @@
                     <button onclick="prevVideo()"><i class="fa-solid fa-backward-step"></i></button>
                     <button class="play-btn" onclick="togglePlay()"><i id="play-icon" class="fa-solid fa-play"></i></button>
                     <button onclick="nextVideo()"><i class="fa-solid fa-forward-step"></i></button>
+                    <!-- Queue Button -->
+                    <button onclick="alert('Queue is managed by YouTube automatically!')" class="list-btn"><i class="fa-solid fa-list"></i></button>
+                </div>
+                
+                <!-- Progress Bar / Seek Bar -->
+                <div class="progress-bar-container">
+                    <span id="current-time">0:00</span>
+                    <input type="range" id="seek-bar" value="0" min="0" max="100" step="1">
+                    <span id="total-time">0:00</span>
                 </div>
             </div>
+        </div>
+
+        <!-- Keyboard Shortcuts Legend -->
+        <div class="shortcuts">
+            <span><kbd>Space</kbd> PLAY / PAUSE</span>
+            <span><kbd>←</kbd> <kbd>→</kbd> SEEK</span>
+            <span><kbd>N</kbd> NEXT</span>
+            <span><kbd>P</kbd> PREV</span>
         </div>
     </footer>
 
