@@ -159,7 +159,7 @@ function renderQueue() {
     
     playlist.forEach((id, index) => {
         let li = document.createElement('li');
-        li.id = 'track-' + id; // Assign an ID so the background fetcher can find it
+        li.id = 'track-' + id; 
         let isCurrent = (index === currentIndex);
         
         if (isCurrent) li.classList.add('active-track');
@@ -175,13 +175,11 @@ function renderQueue() {
         
         queueList.appendChild(li);
 
-        // If the title isn't saved, add it to the background line instead of fetching immediately
         if (!savedTitles[id] && !fetchQueue.includes(id)) {
             fetchQueue.push(id);
         }
     });
 
-    // Start the slow, safe fetching process
     processFetchQueue();
 }
 
