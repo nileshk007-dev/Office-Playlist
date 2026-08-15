@@ -123,3 +123,27 @@ kbd { background: rgba(15, 23, 42, 0.7); padding: 3px 8px; border-radius: 4px; f
 #queue-list::-webkit-scrollbar { width: 6px; }
 #queue-list::-webkit-scrollbar-track { background: transparent; }
 #queue-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+/* ========================================== */
+/* Creator Signature Badge                    */
+/* ========================================== */
+.creator-signature {
+    position: absolute;
+    bottom: 35px;
+    right: 40px;
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+    z-index: 10;
+}
+
+.creator-signature a {
+    color: rgba(168, 178, 209, 0.4); 
+    text-decoration: none;
+    transition: color 0.3s ease;
+    text-transform: uppercase;
+}
+
+.creator-signature a:hover {
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
